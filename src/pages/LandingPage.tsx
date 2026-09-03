@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom';
 import {
   Sparkles, ArrowRight, TrendingUp, Brain, MapPin, GraduationCap,
   Users, BarChart3, AlertTriangle, Building2, Target, CheckCircle2,
-  Briefcase,
+  Briefcase, LogIn, UserPlus,
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const solutionCards = [
   { icon: TrendingUp, title: 'Labour Market Intelligence', desc: 'Real-time analysis of job postings, hiring trends, and emerging skill demands across India.', color: 'bg-blue-600' },
@@ -41,6 +42,8 @@ const problems = [
 ];
 
 export function LandingPage() {
+  const { isAuthenticated } = useAuth();
+  const dashboardLink = isAuthenticated ? '/dashboard' : '/login';
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       {/* Nav */}
@@ -59,9 +62,14 @@ export function LandingPage() {
             <a href="#problem" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 transition-colors">Problem</a>
             <a href="#solution" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 transition-colors">Solution</a>
             <a href="#impact" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 transition-colors">Impact</a>
-            <Link to="/dashboard" className="btn-primary text-sm">Explore Dashboard <ArrowRight className="w-4 h-4" /></Link>
+            <Link to={dashboardLink} className="btn-primary text-sm">Explore Dashboard <ArrowRight className="w-4 h-4" /></Link>
+            {!isAuthenticated && (
+              <Link to="/register" className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                <UserPlus className="w-4 h-4" /> Create Account
+              </Link>
+            )}
           </div>
-          <Link to="/dashboard" className="md:hidden btn-primary text-sm px-4 py-2">Dashboard</Link>
+          <Link to={dashboardLink} className="md:hidden btn-primary text-sm px-4 py-2">Dashboard</Link>
         </div>
       </nav>
 
@@ -84,12 +92,19 @@ export function LandingPage() {
               SkillSync India uses labour-market intelligence and AI-driven insights to align skill development programs with real industry requirements and emerging job opportunities.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <Link to="/dashboard" className="btn-primary justify-center">
-                Explore Dashboard <ArrowRight className="w-4 h-4" />
+              <Link to={dashboardLink} className="btn-primary justify-center">
+                {isAuthenticated ? 'Explore Dashboard' : 'Get Started'} <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link to="/skill-gap" className="btn-secondary justify-center">
-                Analyze Skill Gap <Target className="w-4 h-4" />
-              </Link>
+              {!isAuthenticated && (
+                <Link to="/login" className="btn-secondary justify-center">
+                  <LogIn className="w-4 h-4" /> Login
+                </Link>
+              )}
+              {isAuthenticated && (
+                <Link to="/skill-gap" className="btn-secondary justify-center">
+                  Analyze Skill Gap <Target className="w-4 h-4" />
+                </Link>
+              )}
             </div>
           </div>
 
@@ -200,12 +215,18 @@ export function LandingPage() {
             Dive into the dashboard, analyze skill gaps, and generate AI-powered curriculum recommendations.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/dashboard" className="btn-primary justify-center">
-              Go to Dashboard <ArrowRight className="w-4 h-4" />
+            <Link to={dashboardLink} className="btn-primary justify-center">
+              {isAuthenticated ? 'Go to Dashboard' : 'Get Started'} <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link to="/recommendations" className="btn-secondary justify-center">
-              AI Curriculum Advisor <Brain className="w-4 h-4" />
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/recommendations" className="btn-secondary justify-center">
+                AI Curriculum Advisor <Brain className="w-4 h-4" />
+              </Link>
+            ) : (
+              <Link to="/register" className="btn-secondary justify-center">
+                <UserPlus className="w-4 h-4" /> Create Free Account
+              </Link>
+            )}
           </div>
         </div>
       </section>

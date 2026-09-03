@@ -4,6 +4,7 @@ import {
   Briefcase, TrendingUp, AlertTriangle, GraduationCap, Building2, Target,
   ArrowRight, Sparkles, FileSearch,
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend, RadialBarChart, RadialBar,
@@ -15,6 +16,7 @@ import { storage } from '@/lib/storage';
 const COLORS = ['#2563eb', '#0d9488', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 export function DashboardPage() {
+  const { user } = useAuth();
   const [stateFilter, setStateFilter] = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
   const [industryFilter, setIndustryFilter] = useState('');
@@ -51,6 +53,23 @@ export function DashboardPage() {
           <Sparkles className="w-4 h-4" /> Analyze Skill Gap
         </Link>
       </PageHeader>
+
+      {user && (
+        <div className="card mb-6 bg-gradient-to-r from-blue-900 to-blue-800 border-0">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-white">Welcome back, {user.name.split(' ')[0]}</h2>
+              <p className="text-sm text-blue-200 mt-1">Your Career Readiness at a glance</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1.5 rounded-full bg-white/10 text-white text-xs font-medium">{user.role}</span>
+              <Link to="/resume-analyzer" className="btn-primary text-sm">
+                <FileSearch className="w-4 h-4" /> View Resume Analysis
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <FilterBar>
         <Select label="State" value={stateFilter} onChange={setStateFilter} options={states.map((s) => s.name)} />
@@ -200,16 +219,18 @@ export function DashboardPage() {
 }
 
 function ResumeReadinessCard() {
+  const { user } = useAuth();
   const [resumeData, setResumeData] = useState<{ analysis: { resumeScore: number; jobMatchScore: number; atsScore: number; skillGaps: { severity: string }[]; recommendations: unknown[] } } | null>(null);
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('skillsync_resume_analysis');
+      const key = user ? `resumeAnalysis_${user.id}` : 'skillsync_resume_analysis';
+      const saved = localStorage.getItem(key);
       if (saved) setResumeData(JSON.parse(saved));
     } catch {
       // ignore
     }
-  }, []);
+  }, [user?.id]);
 
   if (!resumeData?.analysis) {
     return (
