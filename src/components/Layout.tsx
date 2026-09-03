@@ -4,8 +4,10 @@ import {
   LayoutDashboard, GitCompareArrows, Briefcase, Building2, MapPin, GraduationCap,
   Sparkles, Users, FileText, Settings, Shield, Menu, X, Bell, Search,
   Moon, Sun, TrendingUp, ChevronRight, Home, FileSearch,
+  User as UserIcon, LogOut, FileSearch as ResumeIcon,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
 import { storage } from '@/lib/storage';
 
 const navItems = [
@@ -19,7 +21,7 @@ const navItems = [
   { path: '/resume-analyzer', label: 'AI Resume Analyzer', icon: FileSearch },
   { path: '/students', label: 'Student Profiles', icon: Users },
   { path: '/reports', label: 'Reports', icon: FileText },
-  { path: '/admin', label: 'Admin', icon: Shield },
+  { path: '/admin', label: 'Admin', icon: Shield, adminOnly: true },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -34,24 +36,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, toggleTheme, notifications, unreadCount, markNotificationRead, markAllRead } = useApp();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const searchRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setSidebarOpen(false);
     setSearchOpen(false);
     setNotifOpen(false);
+    setProfileOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -97,6 +104,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
     state: MapPin,
   };
 
+  const visibleNavItems = navItems.filter((item) => !item.adminOnly || user?.role === 'Government/Administrator');
+
+  const initials = user ? user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase() : 'U';
+
+  function handleLogout() {
+    logout();
+    navigate('/login');
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex">
       {/* Sidebar */}
@@ -118,7 +134,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Home className="w-4.5 h-4.5 shrink-0" />
             <span>Home</span>
           </Link>
-          {navItems.map((item) => {
+          {isAuthenticated && visibleNavItems.map((item) => {
             const Icon = item.icon;
             const active = location.pathname === item.path;
             return (
@@ -238,15 +254,46 @@ export function Layout({ children }: { children: React.ReactNode }) {
               )}
             </div>
 
-            <div className="hidden md:flex items-center gap-2.5 pl-3 ml-1 border-l border-gray-100 dark:border-slate-700">
-              <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center text-white text-sm font-semibold">
-                RK
+            {/* User profile menu */}
+            {isAuthenticated && user ? (
+              <div ref={profileRef} className="relative">
+                <button onClick={() => setProfileOpen(!profileOpen)} className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center text-white text-sm font-semibold shrink-0">
+                    {initials}
+                  </div>
+                  <div className="hidden md:block text-left">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white leading-tight">{user.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">{user.role}</p>
+                  </div>
+                </button>
+                {profileOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-700 rounded-xl shadow-xl border border-gray-100 dark:border-slate-600 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-600">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                    </div>
+                    <div className="py-1">
+                      <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors text-left">
+                        <UserIcon className="w-4 h-4" /> Profile
+                      </button>
+                      <button onClick={() => navigate('/resume-analyzer')} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors text-left">
+                        <ResumeIcon className="w-4 h-4" /> My Resume Analysis
+                      </button>
+                      <button onClick={() => navigate('/settings')} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors text-left">
+                        <Settings className="w-4 h-4" /> Settings
+                      </button>
+                    </div>
+                    <div className="border-t border-gray-100 dark:border-slate-600 py-1">
+                      <button onClick={handleLogout} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left">
+                        <LogOut className="w-4 h-4" /> Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="hidden lg:block">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Dr. Rajesh Kumar</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Policymaker</p>
-              </div>
-            </div>
+            ) : (
+              <Link to="/login" className="btn-primary text-sm">Login</Link>
+            )}
           </div>
         </header>
 

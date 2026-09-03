@@ -55,7 +55,10 @@ interface ResumeAnalysisData {
 
 function loadResumeAnalysis(): ResumeAnalysisData | null {
   try {
-    const raw = localStorage.getItem('skillsync_resume_analysis');
+    const session = localStorage.getItem('skillsync_auth_session');
+    const userId = session ? JSON.parse(session).id : null;
+    const key = userId ? `resumeAnalysis_${userId}` : 'skillsync_resume_analysis';
+    const raw = localStorage.getItem(key);
     if (raw) return JSON.parse(raw).analysis as ResumeAnalysisData;
   } catch {
     // ignore

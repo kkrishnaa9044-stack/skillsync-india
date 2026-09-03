@@ -12,13 +12,14 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from 'recharts';
 import { PageHeader } from '@/components/UI';
+import { useAuth } from '@/context/AuthContext';
 import { validateFile, extractTextFromFile } from '@/services/resumeParser';
 import {
   analyzeResume, compareWithJobDescription, targetJobRoles,
   type ResumeAnalysis,
 } from '@/services/resumeAnalyzer';
 
-const STORAGE_KEY = 'skillsync_resume_analysis';
+const STORAGE_KEY_BASE = 'resumeAnalysis_';
 const ANALYSIS_STEPS = [
   'Reading Resume',
   'Extracting Skills',
@@ -57,12 +58,15 @@ export function ResumeAnalyzerPage() {
   const [jdResult, setJdResult] = useState<{ matchScore: number; skillsYouHave: string[]; skillsMissing: string[]; recommendedChanges: string[] } | null>(null);
   const [jdAnalyzing, setJdAnalyzing] = useState(false);
 
+  const { user } = useAuth();
+  const storageKey = user ? `${STORAGE_KEY_BASE}${user.id}` : 'skillsync_resume_analysis';
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.analysis) setAnalysis(parsed.analysis);
@@ -76,9 +80,9 @@ export function ResumeAnalyzerPage() {
   function saveAnalysis(a: ResumeAnalysis | null, role: string) {
     try {
       if (a) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ analysis: a, targetRole: role }));
+        localStorage.setItem(storageKey, JSON.stringify({ analysis: a, targetRole: role }));
       } else {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(storageKey);
       }
     } catch {
       // ignore
